@@ -93,6 +93,26 @@ describe('CORRECT TEST', function () {
                 });
             });
         });
+
+        describe('/POST search', function() {
+            it('should not add the search, name is incorrect', (done) => {
+                newSearch = {
+                    city: 'notavalidcity',
+                    numDays: 2,
+                    numPlaces: 5
+                }
+    
+                chai.request(url)
+                .post('/api/searches')
+                .send(newSearch)
+                .end((err,res) => {
+                    //console.log(res.body);
+                    idSearch = res.body._id;
+                    res.should.have.status(500);
+                    done();
+                });
+            });
+        });
     
         
     

@@ -290,26 +290,35 @@ db.once('open', function() {
       });
 
       //to be able to access it from the client side without the browser, we will put the methods
-      //UI portion for the user, API portion
+      //UI portion for the user, API portion (FOR TESTING)
     
       app.post('/api/searches', (req, res) => {
-        console.log(req.body)
-        let newSearch = new Search(req.body)
-    
-        newSearch.save(function (err, savedSearch) {
-          if (err) {
-            console.log(err)
-            res.status(500).send("There was an internal error")
+        console.log(req.body);
+        let newSearch = new Search(req.body);
+
+        //Yelp query to see if the city exists
+        getYelpApiQuery(newSearch.city,newSearch.numPlaces,newSearch.numDays,function(err,response){
+          if(err){
+            //console.log(err);
+            res.status(500).send("There was an internal error");
           } else {
-            res.send(savedSearch)
+            newSearch.save(function (err, savedSearch) {
+              if (err) {
+                //console.log(err);
+                res.status(500).send("There was an internal error");
+              } else {
+                res.send(savedSearch);
+              }
+            });
           }
         });
+    
       });
     
       app.get('/api/searches', (req, res) => {
         Search.find({}, function(err, searches) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.send(searches)
@@ -323,7 +332,7 @@ db.once('open', function() {
     
         Search.findById(id, function(err, search) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             if (search === null) {
@@ -340,7 +349,7 @@ db.once('open', function() {
     
         Search.updateOne({"_id": id}, { $set: req.body }, function(err, details) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.status(204).send()
@@ -353,7 +362,7 @@ db.once('open', function() {
     
         Search.deleteOne({"_id": id}, function(err) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.status(204).send()
