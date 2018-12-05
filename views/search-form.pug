@@ -2,7 +2,7 @@ extends layout.pug
 
 block content
   h1.mt-5= city
-  form(method="POST")
+  form(method="POST" action="/searches/new")
     .form-group
       label(for='city') City
       input#city.form-control(type='text', placeholder='Enter city', name="city", value=search.city)
@@ -13,3 +13,6 @@ block content
       label(for='numPlaces') Number of places
       input#numPlaces.form-control(type='text', placeholder='Enter number of places', name="numPlaces", value=search.numPlaces)
     button.btn.btn-primary(type='submit') Submit
+  if locals.err
+    script(type='text/javascript').
+        alert("The introduced data is not valid for the search");

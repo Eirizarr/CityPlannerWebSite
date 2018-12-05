@@ -72,15 +72,24 @@ db.once('open', function() {
       //add a new search, from the searches-new page
       app.post('/searches/new', function(req, res, next) {
         let newSearch = new Search(req.body);
-        newSearch.save(function(err, savedSearch){
-          if (err) {
-            console.log(err)
-            res.render('search-form', { search: newSearch, error: err })
+        //Yelp query to see if the city exists
+        getYelpApiQuery(newSearch.city,newSearch.numPlaces,newSearch.numDays,function(err,response){
+          if(err){
+            res.render('search-form', { search: {}, err: 'Invalid data!' })
+            //console.log(err);
+            console.log("ERROR: THERE WAS AN ERROR WITH THE SEARCH");
           } else {
-            
-            res.redirect('/searches/' + savedSearch.id);
+            newSearch.save(function(err, savedSearch){
+              if (err) {
+                console.log(err);
+                res.render('search-form', { search: newSearch, error: err })
+              } else {
+                res.redirect('/searches/' + savedSearch.id);
+              }
+            });
           }
         });
+        
       });
     
       //get a search (after clicking its title in the main page)
@@ -112,6 +121,22 @@ db.once('open', function() {
       });
 
 
+      function getYelpApiQuery(citySearch,numberPlaces,numberDays,cb){
+        client.search({
+          term: 'Things to do',
+          location: citySearch,
+          sort_by: 'best_match',
+          limit: numberPlaces
+        }).then(response => {
+          console.log("RESPONSE: "+response.jsonBody);
+          cb(null,response.jsonBody);
+        }).catch(e => {
+          console.log("RESPONSE: THERE WAS AN ERROR WITH THE SEARCH");
+          //console.log(e);
+          cb(e);
+        });
+      }
+
       //THIS FUNCTION RETURNS AN ARRAY OF PLACES MAKING A QUERY TO THE YELP API
       function getYelpPlaces(citySearch,numberPlaces,numberDays,cb){
         let listPlaces = [];
@@ -131,7 +156,6 @@ db.once('open', function() {
           cb(null, listPlaces);
         }).catch(e => {
           console.log(e);
-          alert("invalid city");
           cb(e);
         });
         return listPlaces;
