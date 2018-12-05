@@ -72,14 +72,24 @@ db.once('open', function() {
       //add a new search, from the searches-new page
       app.post('/searches/new', function(req, res, next) {
         let newSearch = new Search(req.body);
-        newSearch.save(function(err, savedSearch){
-          if (err) {
-            console.log(err)
-            res.render('search-form', { search: newSearch, error: err })
+        //Yelp query to see if the city exists
+        getYelpApiQuery(newSearch.city,newSearch.numPlaces,newSearch.numDays,function(err,response){
+          if(err){
+            res.render('search-form', { search: {}, err: 'Invalid data!' })
+            //console.log(err);
+            console.log("ERROR: THERE WAS AN ERROR WITH THE SEARCH");
           } else {
-            res.redirect('/searches/' + savedSearch.id);
+            newSearch.save(function(err, savedSearch){
+              if (err) {
+                console.log(err);
+                res.render('search-form', { search: newSearch, error: err })
+              } else {
+                res.redirect('/searches/' + savedSearch.id);
+              }
+            });
           }
         });
+        
       });
     
       //get a search (after clicking its title in the main page)
@@ -111,6 +121,22 @@ db.once('open', function() {
       });
 
 
+      function getYelpApiQuery(citySearch,numberPlaces,numberDays,cb){
+        client.search({
+          term: 'Things to do',
+          location: citySearch,
+          sort_by: 'best_match',
+          limit: numberPlaces
+        }).then(response => {
+          console.log("RESPONSE: "+response.jsonBody);
+          cb(null,response.jsonBody);
+        }).catch(e => {
+          console.log("RESPONSE: THERE WAS AN ERROR WITH THE SEARCH");
+          //console.log(e);
+          cb(e);
+        });
+      }
+
       //THIS FUNCTION RETURNS AN ARRAY OF PLACES MAKING A QUERY TO THE YELP API
       function getYelpPlaces(citySearch,numberPlaces,numberDays,cb){
         let listPlaces = [];
@@ -134,6 +160,7 @@ db.once('open', function() {
         });
         return listPlaces;
       }
+
 
       function getOptimizedRoute(listPlaces,numberPlaces){
         //console.log("OPTIM ROUTE "+listPlaces[0].name);
@@ -234,7 +261,6 @@ db.once('open', function() {
                   
                 }
               });
-              
             }
           }
         });
@@ -264,26 +290,35 @@ db.once('open', function() {
       });
 
       //to be able to access it from the client side without the browser, we will put the methods
-      //UI portion for the user, API portion
+      //UI portion for the user, API portion (FOR TESTING)
     
       app.post('/api/searches', (req, res) => {
-        console.log(req.body)
-        let newSearch = new Search(req.body)
-    
-        newSearch.save(function (err, savedSearch) {
-          if (err) {
-            console.log(err)
-            res.status(500).send("There was an internal error")
+        console.log(req.body);
+        let newSearch = new Search(req.body);
+
+        //Yelp query to see if the city exists
+        getYelpApiQuery(newSearch.city,newSearch.numPlaces,newSearch.numDays,function(err,response){
+          if(err){
+            //console.log(err);
+            res.status(500).send("There was an internal error");
           } else {
-            res.send(savedSearch)
+            newSearch.save(function (err, savedSearch) {
+              if (err) {
+                //console.log(err);
+                res.status(500).send("There was an internal error");
+              } else {
+                res.send(savedSearch);
+              }
+            });
           }
         });
+    
       });
     
       app.get('/api/searches', (req, res) => {
         Search.find({}, function(err, searches) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.send(searches)
@@ -297,7 +332,7 @@ db.once('open', function() {
     
         Search.findById(id, function(err, search) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             if (search === null) {
@@ -314,7 +349,7 @@ db.once('open', function() {
     
         Search.updateOne({"_id": id}, { $set: req.body }, function(err, details) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.status(204).send()
@@ -327,7 +362,7 @@ db.once('open', function() {
     
         Search.deleteOne({"_id": id}, function(err) {
           if (err) {
-            console.log(err)
+            //console.log(err)
             res.status(500).send("Internal server error")
           } else {
             res.status(204).send()
